@@ -10,4 +10,7 @@ dependencies = [
     "asyncpg>=0.30.0",
     "alembic>=1.14.0",
     "python-multipart>=0.0.20",
+    "bcrypt>=5.0.0",
+    "pyjwt>=2.13.0",
+    "email-validator>=2.3.0",
 ]
