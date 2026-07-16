@@ -16,12 +16,6 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db)
 ) -> User:
     token = credentials.credentials
-    # 1. try: user_id = decode_access_token(token)
-    #    except jwt.ExpiredSignatureError → 401 "Token expired"
-    #    except jwt.InvalidTokenError → 401 "Invalid token"
-    # 2. query User by id (user_id is a string, User.id is UUID — cast with uuid.UUID(user_id))
-    # 3. if not found → 401 "Invalid token"
-    # 4. return user
     try:
         user_id = decode_access_token(token)
     except jwt.ExpiredSignatureError:

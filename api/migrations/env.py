@@ -9,6 +9,7 @@ from alembic import context
 from app.database import Base
 from app.config import settings
 import app.models.user  # noqa: F401 — ensures User is registered with Base
+import app.models.photo
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)
