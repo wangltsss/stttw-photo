@@ -6,6 +6,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.models.photo import Photo
+from app.models.job import Job
 from app.schemas.photo import PhotoResponse
 from app.storage import save_file
 from app.exif_utils import extract_exif
@@ -31,7 +32,7 @@ async def upload_photo(
 
     blob_path = f"{current_user.id}/{uuid.uuid4()}/{file.filename}"
     exif = extract_exif(data)
-    save_file(blob_path, data)
+    await save_file(blob_path, data)
 
     photo = Photo(
         user_id=current_user.id,
@@ -50,6 +51,13 @@ async def upload_photo(
     db.add(photo)
     await db.commit()
     await db.refresh(photo)
+
+    job = Job(
+        type="generate_thumbnail",
+        payload={"photo_id": str(photo.id), "blob_path": photo.blob_path}
+    )
+    db.add(job)
+    await db.commit()
 
     return photo
 

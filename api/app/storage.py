@@ -1,16 +1,23 @@
-from pathlib import Path
+from azure.storage.blob.aio import BlobServiceClient
+from app.config import settings
 
-UPLOAD_DIR = Path(__file__).parent.parent / "uploads"
-UPLOAD_DIR.mkdir(exist_ok=True)
-
-
-def save_file(blob_path: str, data: bytes) -> None:
-    full_path = UPLOAD_DIR / blob_path
-    full_path.parent.mkdir(parents=True, exist_ok=True)
-    full_path.write_bytes(data)
+CONTAINER_NAME = "photos"
 
 
-def delete_file(blob_path: str) -> None:
-    full_path = UPLOAD_DIR / blob_path
-    if full_path.exists():
-        full_path.unlink()
+async def save_file(blob_path: str, data: bytes) -> None:
+    async with BlobServiceClient.from_connection_string(settings.azure_storage_connection_string) as client:
+        blob_client = client.get_blob_client(container=CONTAINER_NAME, blob=blob_path)
+        await blob_client.upload_blob(data, overwrite=True)
+
+
+async def download_file(blob_path: str) -> bytes:
+    async with BlobServiceClient.from_connection_string(settings.azure_storage_connection_string) as client:
+        blob_client = client.get_blob_client(container=CONTAINER_NAME, blob=blob_path)
+        stream = await blob_client.download_blob()
+        return await stream.readall()
+
+
+async def delete_file(blob_path: str) -> None:
+    async with BlobServiceClient.from_connection_string(settings.azure_storage_connection_string) as client:
+        blob_client = client.get_blob_client(container=CONTAINER_NAME, blob=blob_path)
+        await blob_client.delete_blob(delete_snapshots="include")

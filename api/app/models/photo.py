@@ -22,3 +22,4 @@ class Photo(Base):
     latitude: Mapped[float | None] = mapped_column(nullable=True)
     longitude: Mapped[float | None] = mapped_column(nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    thumbnail_path: Mapped[str | None] = mapped_column(String(512), nullable=True)

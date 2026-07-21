@@ -18,3 +18,4 @@ class PhotoResponse(BaseModel):
     latitude: float | None
     longitude: float | None
     created_at: datetime
+    thumbnail_path: str | None
