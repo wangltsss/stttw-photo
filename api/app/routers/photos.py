@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 import hashlib, uuid
 from app.database import get_db
 from app.dependencies import get_current_user
@@ -23,6 +24,11 @@ async def upload_photo(
         raise HTTPException(status_code=422, detail="Unsupported file type")
     data = await file.read()
     sha256_hash = hashlib.sha256(data).hexdigest()    
+
+    photo = (await db.execute(select(Photo).where(Photo.sha256_hash == sha256_hash, Photo.user_id == current_user.id))).scalar_one_or_none()
+    if photo:
+        raise HTTPException(status_code=409, detail="Duplicate photo")
+
     blob_path = f"{current_user.id}/{uuid.uuid4()}/{file.filename}"
     exif = extract_exif(data)
     save_file(blob_path, data)
