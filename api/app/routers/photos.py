@@ -54,3 +54,11 @@ async def upload_photo(
     return photo
 
 
+@router.get("/", response_model=list[PhotoResponse])
+async def list_photo(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return (await db.execute(select(Photo).where(Photo.user_id == current_user.id))).scalars().all()
+
+
