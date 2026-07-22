@@ -7,8 +7,9 @@ from PIL import Image
 from sqlalchemy import select
 
 from app.database import AsyncSessionLocal
-from app.models.job import Job
+from app.models.user import User  # noqa: F401 — must precede Photo to satisfy FK resolution
 from app.models.photo import Photo
+from app.models.job import Job
 from app.storage import download_file, save_file
 
 logging.basicConfig(level=logging.INFO)
@@ -21,20 +22,19 @@ POLL_INTERVAL = 2
 async def handle_thumbnail(payload: dict) -> None:
     photo_id = uuid.UUID(payload["photo_id"])
     blob_path = payload["blob_path"]
-
-    # 1. download the original file bytes from Azure
-    # 2. open with PIL: Image.open(io.BytesIO(data))
-    # 3. resize: img.thumbnail(THUMBNAIL_SIZE)  — maintains aspect ratio
-    # 4. write to a buffer: buf = io.BytesIO(); img.save(buf, format="JPEG"); buf.seek(0)
-    # 5. thumbnail_path = f"thumbnails/{blob_path}"
-    # 6. await save_file(thumbnail_path, buf.read())
-    # 7. update the photo row:
-    #      async with AsyncSessionLocal() as db:
-    #          async with db.begin():
-    #              result = await db.execute(select(Photo).where(Photo.id == photo_id))
-    #              photo = result.scalar_one()
-    #              photo.thumbnail_path = thumbnail_path
-    ...
+    data = await download_file(blob_path)
+    img = Image.open(io.BytesIO(data))
+    img.thumbnail(THUMBNAIL_SIZE)
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    buf.seek(0)
+    thumbnail_path = f"thumbnails/{blob_path}"
+    await save_file(thumbnail_path, buf.read())
+    async with AsyncSessionLocal() as db:
+        async with db.begin():
+            result = await db.execute(select(Photo).where(Photo.id == photo_id))
+            photo = result.scalar_one()
+            photo.thumbnail_path = thumbnail_path
 
 
 async def process_next_job() -> None:
