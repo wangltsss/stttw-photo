@@ -8,8 +8,10 @@ from app.models.user import User
 from app.models.photo import Photo
 from app.models.job import Job
 from app.schemas.photo import PhotoResponse
-from app.storage import save_file
+from app.storage import save_file, download_file
 from app.exif_utils import extract_exif
+import io
+from fastapi.responses import StreamingResponse
 
 router = APIRouter(prefix="/photos", tags=["photos"])
 
@@ -70,3 +72,17 @@ async def list_photo(
     return (await db.execute(select(Photo).where(Photo.user_id == current_user.id))).scalars().all()
 
 
+@router.get("/public", response_model=list[PhotoResponse])
+async def list_public_photos(db: AsyncSession = Depends(get_db)):
+    return (await db.execute(select(Photo).order_by(Photo.created_at.desc()))).scalars().all()
+    
+
+@router.get("/{photo_id}/thumbnail")
+async def get_thumbnail(photo_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    photo = (await db.execute(select(Photo).where(Photo.id == photo_id))).scalar_one_or_none()
+    if not photo:
+        raise HTTPException(status_code=404, detail="Photo with given id does not exist")
+    if not photo.thumbnail_path:
+        raise HTTPException(status_code=404, detail="Thumbnail does not exist")
+    data = await download_file(photo.thumbnail_path)
+    return StreamingResponse(io.BytesIO(data), media_type="image/jpeg")
