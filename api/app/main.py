@@ -16,7 +16,10 @@ app.include_router(photos.router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+    "http://localhost:5173",
+    "https://blue-river-0b937740f.7.azurestaticapps.net",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

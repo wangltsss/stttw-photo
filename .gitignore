@@ -7,3 +7,5 @@ dist/
 .DS_Store
 node_modules/
 HANDOFF.md
+api-app.yaml
+worker-app.yaml

@@ -6,12 +6,15 @@ from app.models.user import User
 from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse, UserResponse
 from app.auth_utils import hash_password, verify_password, create_access_token
 from app.dependencies import get_current_user
+from app.config import settings
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=UserResponse, status_code=201)
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    if settings.environment == "production":
+        raise HTTPException(status_code=403, detail="Registration is disabled")
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
     if user:
